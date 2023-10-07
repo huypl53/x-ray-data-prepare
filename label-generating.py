@@ -1,4 +1,5 @@
 from os import mkdir
+import os
 from os.path import isdir, join, dirname, splitext
 from multiprocessing import Pool, cpu_count
 from os import listdir
@@ -7,13 +8,9 @@ from glob import glob
 import sys
 import json
 from tqdm import tqdm
+from pprint import pprint
 
-IMAGES_DIRECTORY = 'images'
-METADATA_DIRECTORY = 'metadata'
-MASK_IMAGES_DIRECTORY = 'mask_images'
-LABEL_IMAGES_DIRECTORY = 'label_images'
-LABEL_OUTLINE_IMAGES_DIRECTORY = 'label_outline_images'
-
+from env_file import *
 
 def prepare_directories(root_dir):
 
@@ -23,7 +20,8 @@ def prepare_directories(root_dir):
         mkdir(join(root_dir, LABEL_IMAGES_DIRECTORY ))
     if (not isdir(join(root_dir, LABEL_OUTLINE_IMAGES_DIRECTORY ))):
         mkdir(join(root_dir, LABEL_OUTLINE_IMAGES_DIRECTORY ))
-
+    if (not isdir(join(root_dir, LABEL_BBOX_DIRECTORY ))):
+        mkdir(join(root_dir, LABEL_BBOX_DIRECTORY ))
 
 def handle_image_wrapper( image_path ):
     return handle_image(image_path, 
@@ -31,7 +29,8 @@ def handle_image_wrapper( image_path ):
                METADATA_DIRECTORY, 
                LABEL_OUTLINE_IMAGES_DIRECTORY, 
                MASK_IMAGES_DIRECTORY, 
-               LABEL_IMAGES_DIRECTORY  )
+               LABEL_IMAGES_DIRECTORY, 
+                LABEL_BBOX_DIRECTORY)
 
 def get_image_meta_wrapper (image_path): 
     meta_path = f'{METADATA_DIRECTORY}'.join(
@@ -43,12 +42,19 @@ def get_image_meta_wrapper (image_path):
     )
 
 if __name__ == '__main__':
-    root_dir = sys.argv[1]
-    if not root_dir:
-        print('Root dir must be specified...')
+    root_dir = ''
+    try:
+        root_dir = sys.argv[1]
+        if not os.path.isdir(root_dir):
+            raise Exception
+    except: 
+        print('Root dir must be specified and valid...')
         exit()
     image_dirs = glob(f'{root_dir}/**/{IMAGES_DIRECTORY}', recursive=True)
+    image_dirs = [d for d in image_dirs if YOLO_DIR not in d]
+    print('Scanning list:\n', '\n'.join( image_dirs ))
     for image_dir in tqdm( image_dirs ):
+        # print('Scanning in: ', image_dir)
         sub_root_dir = dirname(image_dir)
         prepare_directories(sub_root_dir)
 
@@ -56,9 +62,12 @@ if __name__ == '__main__':
 
 
         pool = Pool(cpu_count())
-        colors_to_label_names = dict()
+        # colors_to_label_names = dict()
 
+        for image_path in image_paths:
+            handle_image_wrapper(image_path)
 
+        tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False )
         # for result in tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ):
         #     for item in result:
         #         colors_to_label_names[item] = result[item]
@@ -68,10 +77,10 @@ if __name__ == '__main__':
 
         meta_keys = set()
 
-        for metadata in pool.imap_unordered(get_image_meta_wrapper, image_paths):
-            if 'polypRegions' not in metadata.keys():
-                for k in metadata.keys():
-                    meta_keys.add(k)
+        # for metadata in pool.imap_unordered(get_image_meta_wrapper, image_paths):
+        #     if 'polypRegions' not in metadata.keys():
+        #         for k in metadata.keys():
+        #             meta_keys.add(k)
 
         # open(join(sub_root_dir, './meta_keys.txt' ), 'w').write('\n'.join(meta_keys))
         open(join('./meta_keys.txt' ), 'w').write('\n'.join(meta_keys))

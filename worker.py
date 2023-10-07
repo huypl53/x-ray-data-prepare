@@ -3,12 +3,17 @@ from sys import argv
 from os.path import isdir, join, splitext, basename, dirname
 import json
 
+BBOX_LABEL_DICT = {
+    '0': 'Lesion'
+}
+
 def handle_image(image_path,
                  IMAGES_DIRECTORY,
                  METADATA_DIRECTORY, 
                  LABEL_OUTLINE_IMAGES_DIRECTORY, 
                  MASK_IMAGES_DIRECTORY,
-                 LABEL_IMAGES_DIRECTORY):
+                 LABEL_IMAGES_DIRECTORY,
+                 LABEL_BBOX_DIRECTORY):
     image = Image.open(image_path)
     image_size = image.size
     width, height = image_size
@@ -17,10 +22,11 @@ def handle_image(image_path,
     image_name = basename(image_path)
     if not image_name:
         print(f'{image_name} does not exist!')
-        return []
+        return
     image_id = splitext(image_name)[0] 
+    meta_path = join(parent_dir, METADATA_DIRECTORY, image_id + '.json')
     metadata = json.load(
-        open(join(parent_dir, METADATA_DIRECTORY, image_id + '.json'), encoding='UTF-8'))
+        open(meta_path, encoding='UTF-8'))
 
     mask_image = Image.new('1', image_size)
     mask_draw = ImageDraw.Draw(mask_image)
@@ -30,7 +36,7 @@ def handle_image(image_path,
     label_outline_image = image.copy()
     label_outline_draw = ImageDraw.Draw(label_outline_image)
 
-    colors_to_label_names = dict()
+    # colors_to_label_names = dict()
 
     region_list_key, region_key = '', ''
     if 'polypRegions' in metadata.keys():
@@ -41,25 +47,45 @@ def handle_image(image_path,
         region_list_key = 'region_list'
         region_key = 'border'
     else:
-        print(f'No key label found with image: {image_path}')
-        return dict()
+        print(f'No key metadata label found with image: {image_path}')
+        return
 
-    for item in metadata[region_list_key]:
-        vertices = []
-        for v in item[region_key]['vertices']:
-            vertices.append((v['x'] * width, v['y'] * height))
-        mask_draw.polygon(vertices, fill=1, outline=1)
-        if (item['label'] is not None):
-            item_color = item['label']['color']
-            item_label_name = item['label']['displayName']
-            label_draw.polygon(vertices, fill=item_color, outline=item_color)
-            label_outline_draw.polygon(vertices, outline=item_color)
-            colors_to_label_names[item_color] = item_label_name
+
+    bbox_labels = []
+    try:
+        for item in metadata[region_list_key]:
+            xmin, ymin, xmax, ymax = 1,1,0,0
+            vertices = []
+            for v in item[region_key]['vertices']:
+                vertices.append((v['x'] * width, v['y'] * height))
+                xmin = min(xmin, v['x'])
+                xmax = max(xmax, v['x'])
+                ymin = min(ymin, v['y'])
+                ymax = max(ymax, v['y'])
+            mask_draw.polygon(vertices, fill=1, outline=1)
+            if (item['label'] is not None):
+                item_color = item['label']['color']
+                # item_label_name = item['label']['displayName']
+                label_draw.polygon(vertices, fill=item_color, outline=item_color)
+                label_outline_draw.polygon(vertices, outline=item_color)
+                # colors_to_label_names[item_color] = item_label_name
+
+            center_bbox_label = [(xmax + xmin)/2, (ymax + ymin)/2, xmax - xmin, ymax -ymin]
+            # TODO: label mapping 
+            bbox_label = ' '.join(['0'] + [str(v) for v in center_bbox_label])
+            bbox_labels.append(bbox_label)
+    except Exception as e:
+        print(f"Worker failed at: {meta_path}, {e}" )
+        exit()
+        # return dict()
+
+
+    open(join(parent_dir, LABEL_BBOX_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(bbox_labels))
 
     label_outline_image.save(join(parent_dir, LABEL_OUTLINE_IMAGES_DIRECTORY, image_id + '.png'))
     mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
     label_image.save(join(parent_dir, LABEL_IMAGES_DIRECTORY, image_id + '.png'))
-    return colors_to_label_names
+    # return colors_to_label_names
 
 def get_image_meta(meta_path):
     try:

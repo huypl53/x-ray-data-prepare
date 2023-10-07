@@ -1,3 +1,0 @@
-pip install -r requirementss.txt
-python3 main.py <image_folders>
-
