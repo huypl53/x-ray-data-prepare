@@ -1,0 +1,77 @@
+from os import mkdir
+from os.path import isdir, join, dirname, splitext
+from multiprocessing import Pool, cpu_count
+from os import listdir
+from worker import handle_image, get_image_meta 
+from glob import glob
+import sys
+import json
+from tqdm import tqdm
+
+IMAGES_DIRECTORY = 'images'
+METADATA_DIRECTORY = 'metadata'
+MASK_IMAGES_DIRECTORY = 'mask_images'
+LABEL_IMAGES_DIRECTORY = 'label_images'
+LABEL_OUTLINE_IMAGES_DIRECTORY = 'label_outline_images'
+
+
+def prepare_directories(root_dir):
+
+    if (not isdir(join(root_dir, MASK_IMAGES_DIRECTORY ))):
+        mkdir(join(root_dir, MASK_IMAGES_DIRECTORY ))
+    if (not isdir(join(root_dir, LABEL_IMAGES_DIRECTORY ))):
+        mkdir(join(root_dir, LABEL_IMAGES_DIRECTORY ))
+    if (not isdir(join(root_dir, LABEL_OUTLINE_IMAGES_DIRECTORY ))):
+        mkdir(join(root_dir, LABEL_OUTLINE_IMAGES_DIRECTORY ))
+
+
+def handle_image_wrapper( image_path ):
+    return handle_image(image_path, 
+               IMAGES_DIRECTORY, 
+               METADATA_DIRECTORY, 
+               LABEL_OUTLINE_IMAGES_DIRECTORY, 
+               MASK_IMAGES_DIRECTORY, 
+               LABEL_IMAGES_DIRECTORY  )
+
+def get_image_meta_wrapper (image_path): 
+    meta_path = f'{METADATA_DIRECTORY}'.join(
+            image_path.rsplit(f'{IMAGES_DIRECTORY}', 1)
+        )
+    meta_path = splitext(meta_path)[0] + '.json'
+    return get_image_meta(
+        meta_path
+    )
+
+if __name__ == '__main__':
+    root_dir = sys.argv[1]
+    if not root_dir:
+        print('Root dir must be specified...')
+        exit()
+    image_dirs = glob(f'{root_dir}/**/{IMAGES_DIRECTORY}', recursive=True)
+    for image_dir in tqdm( image_dirs ):
+        sub_root_dir = dirname(image_dir)
+        prepare_directories(sub_root_dir)
+
+        image_paths = glob(f'{image_dir}/*')
+
+
+        pool = Pool(cpu_count())
+        colors_to_label_names = dict()
+
+
+        # for result in tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ):
+        #     for item in result:
+        #         colors_to_label_names[item] = result[item]
+        #
+        # with open(join('__colors_2_labels__.json'), 'w') as label_file:
+        #     json.dump(colors_to_label_names, label_file)
+
+        meta_keys = set()
+
+        for metadata in pool.imap_unordered(get_image_meta_wrapper, image_paths):
+            if 'polypRegions' not in metadata.keys():
+                for k in metadata.keys():
+                    meta_keys.add(k)
+
+        # open(join(sub_root_dir, './meta_keys.txt' ), 'w').write('\n'.join(meta_keys))
+        open(join('./meta_keys.txt' ), 'w').write('\n'.join(meta_keys))
