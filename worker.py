@@ -1,11 +1,31 @@
 from PIL import Image, ImageDraw
 from sys import argv
 from os.path import isdir, join, splitext, basename, dirname
+import numpy as np
 import json
+import cv2
 
 BBOX_LABEL_DICT = {
     '0': 'Lesion'
 }
+mask = cv2.imread('mask.png', cv2.IMREAD_UNCHANGED)
+def merge_image_and_mask(image, mask, output_path):
+
+    # Resize the mask to match the size of the image
+    mask_resized = cv2.resize(mask, (image.shape[1], image.shape[0]))
+
+    # Extract the alpha channel from the mask
+    alpha = mask_resized[:, :, 3] / 255.0
+
+    # Expand the alpha channel to 3 channels for blending
+    alpha = np.expand_dims(alpha, axis=2)
+
+    # Multiply the image and mask with the expanded alpha channel
+    merged = alpha * mask_resized[:, :, :3] + (1 - alpha) * image
+    merged = merged[0:640, 0:640]
+    #print(merged.shape)
+    # Save the merged image
+    cv2.imwrite(output_path, merged)
 
 def handle_image(image_path,
                  IMAGES_DIRECTORY,
@@ -15,8 +35,12 @@ def handle_image(image_path,
                  LABEL_IMAGES_DIRECTORY,
                  LABEL_BBOX_DIRECTORY):
     image = Image.open(image_path)
+    src_width, src_height = image.size
+    image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))
     image_size = image.size
     width, height = image_size
+    new_relative_width = width/src_width 
+    new_relative_height = height/src_height
     
     parent_dir = dirname( dirname(image_path) )
     image_name = basename(image_path)
@@ -57,6 +81,8 @@ def handle_image(image_path,
             xmin, ymin, xmax, ymax = 1,1,0,0
             vertices = []
             for v in item[region_key]['vertices']:
+                v['x'] = v['x']/ new_relative_width
+                v['y'] = v['y']/ new_relative_height
                 vertices.append((v['x'] * width, v['y'] * height))
                 xmin = min(xmin, v['x'])
                 xmax = max(xmax, v['x'])
