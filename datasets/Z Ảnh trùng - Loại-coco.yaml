@@ -1,9 +1,0 @@
-
-path: C:\Users\BTL86\Downloads\2023-medical-x-ray\2 Viêm thực quản\Z Ảnh trùng - Loại\yolov8  # dataset root dir
-train: images/train  # train images (relative to 'path') 4 images
-val: images/val  # val images (relative to 'path') 4 images
-test:  # test images (optional)
-
-# Classes (80 COCO classes)
-names:
-  1: lesion

@@ -37,6 +37,7 @@ def handle_image(image_path,
     image = Image.open(image_path)
     src_width, src_height = image.size
     image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))
+    image.save(image_path)
     image_size = image.size
     width, height = image_size
     new_relative_width = width/src_width 
