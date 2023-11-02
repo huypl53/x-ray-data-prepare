@@ -6,3 +6,4 @@ LABEL_OUTLINE_IMAGES_DIRECTORY = 'label_outline_images'
 LABEL_BBOX_DIRECTORY = 'bboxes'
 
 YOLO_DIR = 'yolov8'
+YOLO_K_SPLIT = 5

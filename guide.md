@@ -14,10 +14,16 @@ Generate segment, bounding boxes from meta data
 python3 label_generating.py <image_root_folder>
 ```
 
-### Yolo data preparing
+## Yolo data split train/test only
 
 ```bash
 python3 yolo-preparing.py <image_root_folder>
+```
+
+## Yolo data k-fold
+
+```bash
+python3 yolo-k-fold.py <image_root_folder>
 ```
 
 ## Data preprocessing
