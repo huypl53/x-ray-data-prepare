@@ -1,4 +1,4 @@
-from os.path import split
+from os.path import isdir, split
 import sys
 import os
 from glob import glob
@@ -43,6 +43,11 @@ if __name__ == '__main__':
 
         yolo_image_dir = os.path.join(yolo_root_dir, 'images')
         yolo_label_dir = os.path.join(yolo_root_dir, 'labels')
+        if os.path.isdir(yolo_image_dir):
+            shutil.rmtree(yolo_image_dir)
+
+        if os.path.isdir(yolo_label_dir):
+            shutil.rmtree(yolo_label_dir)
 
         os.makedirs(yolo_image_dir,exist_ok=True)
         os.makedirs(yolo_label_dir,exist_ok=True)
