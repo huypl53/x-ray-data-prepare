@@ -21,10 +21,11 @@ except:
     exit()
 image_dirs = glob(f'{root_dir}/**/{IMAGES_DIRECTORY}', recursive=True)
 image_dirs = [d for d in image_dirs if YOLO_DIR not in d]
+image_dirs = [d for d in image_dirs if YOLO_K_FOLD_DIR not in d]
 dataset_dirs = [Path(d).parent for d in image_dirs]
 
 for dataset_dir in tqdm(  dataset_dirs ):
-    dataset_path = Path(root_dir) # replace with 'path/to/dataset' for your custom data
+    dataset_path = Path(dataset_dir) # replace with 'path/to/dataset' for your custom data
     labels = sorted(dataset_path.rglob(f"*{LABEL_BBOX_DIRECTORY}/*.txt")) # all data in 'labels'
 
     yaml_file = './data.yaml'  # your data YAML with data directories and names dictionary
@@ -82,7 +83,7 @@ for dataset_dir in tqdm(  dataset_dirs ):
         images.extend(sorted((dataset_path / 'images').rglob(f"*{ext}")))
 
 # Create the necessary directories and dataset YAML files (unchanged)
-    save_path = Path(dataset_path / f'{datetime.date.today().isoformat()}_{ksplit}-Fold_Cross-val')
+    save_path = Path(dataset_path / f'{datetime.date.today().isoformat()}_{ksplit}-{YOLO_K_FOLD_DIR}')
     save_path.mkdir(parents=True, exist_ok=True)
     ds_yamls = []
 

@@ -7,3 +7,4 @@ LABEL_BBOX_DIRECTORY = 'bboxes'
 
 YOLO_DIR = 'yolov8'
 YOLO_K_SPLIT = 5
+YOLO_K_FOLD_DIR = 'Fold_Cross-val'
