@@ -1,4 +1,4 @@
-# Data preparing
+# Experiments
 
 ## Env installation
 
@@ -10,6 +10,12 @@ pip install -r requirementss.txt
 
 Generate segment, bounding boxes from meta data
 
+## Data preprocessing
+
+## Detection task
+
+### Data
+
 ```bash
 python3 label_generating.py <image_root_folder>
 ```
@@ -17,7 +23,7 @@ python3 label_generating.py <image_root_folder>
 1. Yolo data split train/test only
 
 ```bash
-# preparing
+# prepare train/test + dataset.yml
 python3 yolo-preparing.py <image_root_folder>
 # training like normal
 ```
@@ -32,10 +38,10 @@ python3 yolo-k-fold.py <image_root_folder>
 python yolo_train_fold.p <text_file_contain>
 ```
 
+## Segmentation task
+
 3. Yolo first training with all data, then finetune with subdataset
 
 ```bash
 
 ```
-
-## Data preprocessing

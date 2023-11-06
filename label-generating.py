@@ -23,13 +23,17 @@ def prepare_directories(root_dir):
     if (not isdir(join(root_dir, LABEL_BBOX_DIRECTORY ))):
         mkdir(join(root_dir, LABEL_BBOX_DIRECTORY ))
 
+    if (not isdir(join(root_dir, LABEL_SEG_DIRECTORY ))):
+        mkdir(join(root_dir, LABEL_SEG_DIRECTORY ))
+
 def handle_image_wrapper( image_path ):
     return handle_image(image_path, 
-               IMAGES_DIRECTORY, 
-               METADATA_DIRECTORY, 
-               LABEL_OUTLINE_IMAGES_DIRECTORY, 
-               MASK_IMAGES_DIRECTORY, 
-               LABEL_IMAGES_DIRECTORY, 
+                IMAGES_DIRECTORY, 
+                METADATA_DIRECTORY, 
+                LABEL_OUTLINE_IMAGES_DIRECTORY, 
+                MASK_IMAGES_DIRECTORY, 
+                LABEL_IMAGES_DIRECTORY, 
+                LABEL_BBOX_DIRECTORY,
                 LABEL_BBOX_DIRECTORY)
 
 def get_image_meta_wrapper (image_path): 

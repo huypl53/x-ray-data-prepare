@@ -33,7 +33,8 @@ def handle_image(image_path,
                  LABEL_OUTLINE_IMAGES_DIRECTORY, 
                  MASK_IMAGES_DIRECTORY,
                  LABEL_IMAGES_DIRECTORY,
-                 LABEL_BBOX_DIRECTORY):
+                 LABEL_BBOX_DIRECTORY, 
+                 LABEL_SEG_DIRECTORY):
     image = Image.open(image_path)
     src_width, src_height = image.size
     image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))
@@ -77,13 +78,16 @@ def handle_image(image_path,
 
 
     bbox_labels = []
+    yolo_keypoint_lines = []
     try:
         for item in metadata[region_list_key]:
             xmin, ymin, xmax, ymax = 1,1,0,0
             vertices = []
+            yolo_keypoints = []
             for v in item[region_key]['vertices']:
                 v['x'] = v['x']/ new_relative_width
                 v['y'] = v['y']/ new_relative_height
+                yolo_keypoints.append([v['x'], v['y']])
                 vertices.append((v['x'] * width, v['y'] * height))
                 xmin = min(xmin, v['x'])
                 xmax = max(xmax, v['x'])
@@ -97,6 +101,8 @@ def handle_image(image_path,
                 label_outline_draw.polygon(vertices, outline=item_color)
                 # colors_to_label_names[item_color] = item_label_name
 
+            keypoint_label = ' '.join(['0'] + [str(v) for v in yolo_keypoints])
+            yolo_keypoint_lines.append(keypoint_label)
             center_bbox_label = [(xmax + xmin)/2, (ymax + ymin)/2, xmax - xmin, ymax -ymin]
             # TODO: label mapping 
             bbox_label = ' '.join(['0'] + [str(v) for v in center_bbox_label])
@@ -108,6 +114,7 @@ def handle_image(image_path,
 
 
     open(join(parent_dir, LABEL_BBOX_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(bbox_labels))
+    open(join(parent_dir, LABEL_SEG_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(yolo_keypoint_lines))
 
     label_outline_image.save(join(parent_dir, LABEL_OUTLINE_IMAGES_DIRECTORY, image_id + '.png'))
     mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
