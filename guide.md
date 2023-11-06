@@ -17,7 +17,7 @@ Generate segment, bounding boxes from meta data
 ### Data
 
 ```bash
-python3 label_generating.py <image_root_folder>
+python3 label-generating.py <image_root_folder>
 ```
 
 1. Yolo data split train/test only
@@ -35,7 +35,7 @@ python3 yolo-preparing.py <image_root_folder>
 python3 yolo-k-fold.py <image_root_folder>
 
 # training
-python yolo_train_fold.p <text_file_contain>
+python yolo_train_fold.py <text_file_contain>
 ```
 
 ## Segmentation task
