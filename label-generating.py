@@ -55,7 +55,7 @@ if __name__ == '__main__':
         print('Root dir must be specified and valid...')
         exit()
     image_dirs = glob(f'{root_dir}/**/{IMAGES_DIRECTORY}', recursive=True)
-    image_dirs = [d for d in image_dirs if YOLO_DIR not in d]
+    image_dirs = [d for d in image_dirs if YOLO_DIR not in d and YOLO_SEG_DIR not in d and YOLO_K_FOLD_DIR not in d]
     print('Scanning list:\n', '\n'.join( image_dirs ))
     for image_dir in tqdm( image_dirs ):
         # print('Scanning in: ', image_dir)
@@ -68,8 +68,8 @@ if __name__ == '__main__':
         pool = Pool(cpu_count())
         # colors_to_label_names = dict()
 
-        for image_path in image_paths:
-            handle_image_wrapper(image_path)
+        # for image_path in image_paths:
+        #     handle_image_wrapper(image_path)
 
         tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False )
         # for result in tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ):
