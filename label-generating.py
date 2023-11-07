@@ -30,12 +30,14 @@ def handle_image_wrapper( image_path ):
     return handle_image(image_path, 
                 IMAGES_DIRECTORY, 
                 METADATA_DIRECTORY, 
-                LABEL_OUTLINE_IMAGES_DIRECTORY, 
-                MASK_IMAGES_DIRECTORY, 
+                # LABEL_OUTLINE_IMAGES_DIRECTORY, 
+                '',
+                # MASK_IMAGES_DIRECTORY, 
+                '',
                 LABEL_IMAGES_DIRECTORY, 
                 LABEL_BBOX_DIRECTORY,
-                LABEL_BBOX_DIRECTORY)
-
+                LABEL_SEG_DIRECTORY)
+                 
 def get_image_meta_wrapper (image_path): 
     meta_path = f'{METADATA_DIRECTORY}'.join(
             image_path.rsplit(f'{IMAGES_DIRECTORY}', 1)
@@ -68,10 +70,10 @@ if __name__ == '__main__':
         pool = Pool(cpu_count())
         # colors_to_label_names = dict()
 
-        # for image_path in image_paths:
-        #     handle_image_wrapper(image_path)
+        for image_path in tqdm( image_paths, leave=False ):
+            handle_image_wrapper(image_path)
 
-        tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False )
+        # tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False )
         # for result in tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ):
         #     for item in result:
         #         colors_to_label_names[item] = result[item]
@@ -79,7 +81,7 @@ if __name__ == '__main__':
         # with open(join('__colors_2_labels__.json'), 'w') as label_file:
         #     json.dump(colors_to_label_names, label_file)
 
-        meta_keys = set()
+        # meta_keys = set()
 
         # for metadata in pool.imap_unordered(get_image_meta_wrapper, image_paths):
         #     if 'polypRegions' not in metadata.keys():
@@ -87,4 +89,4 @@ if __name__ == '__main__':
         #             meta_keys.add(k)
 
         # open(join(sub_root_dir, './meta_keys.txt' ), 'w').write('\n'.join(meta_keys))
-        open(join('./meta_keys.txt' ), 'w').write('\n'.join(meta_keys))
+        # open(join('./meta_keys.txt' ), 'w').write('\n'.join(meta_keys))

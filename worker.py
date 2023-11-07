@@ -9,7 +9,7 @@ BBOX_LABEL_DICT = {
     '0': 'Lesion'
 }
 mask = cv2.imread('mask.png', cv2.IMREAD_UNCHANGED)
-def merge_image_and_mask(image, mask, output_path):
+def merge_image_and_mask(image, mask=mask):
 
     # Resize the mask to match the size of the image
     mask_resized = cv2.resize(mask, (image.shape[1], image.shape[0]))
@@ -22,10 +22,11 @@ def merge_image_and_mask(image, mask, output_path):
 
     # Multiply the image and mask with the expanded alpha channel
     merged = alpha * mask_resized[:, :, :3] + (1 - alpha) * image
-    merged = merged[0:640, 0:640]
+    # merged = merged[0:640, 0:640]
     #print(merged.shape)
     # Save the merged image
-    cv2.imwrite(output_path, merged)
+    # cv2.imwrite(output_path, merged)
+    return merged
 
 def handle_image(image_path,
                  IMAGES_DIRECTORY,
@@ -38,6 +39,11 @@ def handle_image(image_path,
     image = Image.open(image_path)
     src_width, src_height = image.size
     image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))
+
+    np_image = np.array(image)
+    np_masked_image = merge_image_and_mask(np_image)
+    image = Image.fromarray(np_masked_image.astype('uint8'))
+
     image.save(image_path)
     image_size = image.size
     width, height = image_size
@@ -87,7 +93,8 @@ def handle_image(image_path,
             for v in item[region_key]['vertices']:
                 v['x'] = v['x']/ new_relative_width
                 v['y'] = v['y']/ new_relative_height
-                yolo_keypoints.append([v['x'], v['y']])
+                yolo_keypoints.append(v['x'])
+                yolo_keypoints.append(v['y'])
                 vertices.append((v['x'] * width, v['y'] * height))
                 xmin = min(xmin, v['x'])
                 xmax = max(xmax, v['x'])
@@ -116,8 +123,8 @@ def handle_image(image_path,
     open(join(parent_dir, LABEL_BBOX_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(bbox_labels))
     open(join(parent_dir, LABEL_SEG_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(yolo_keypoint_lines))
 
-    label_outline_image.save(join(parent_dir, LABEL_OUTLINE_IMAGES_DIRECTORY, image_id + '.png'))
-    mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
+    if LABEL_OUTLINE_IMAGES_DIRECTORY: label_outline_image.save(join(parent_dir, LABEL_OUTLINE_IMAGES_DIRECTORY, image_id + '.png'))
+    if MASK_IMAGES_DIRECTORY: mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
     label_image.save(join(parent_dir, LABEL_IMAGES_DIRECTORY, image_id + '.png'))
     # return colors_to_label_names
 
