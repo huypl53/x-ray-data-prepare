@@ -70,9 +70,10 @@ if __name__ == '__main__':
         pool = Pool(cpu_count())
         # colors_to_label_names = dict()
 
-        for image_path in tqdm( image_paths, leave=False ):
-            handle_image_wrapper(image_path)
+        # for image_path in tqdm( image_paths, leave=False ):
+        #     handle_image_wrapper(image_path)
 
+        list( tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ))  
         # tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False )
         # for result in tqdm( pool.imap_unordered(handle_image_wrapper, image_paths), leave=False ):
         #     for item in result:
