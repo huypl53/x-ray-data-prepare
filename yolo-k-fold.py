@@ -20,7 +20,7 @@ except:
     print('Root dir must be specified and valid...')
     exit()
 image_dirs = glob(f'{root_dir}/**/{IMAGES_DIRECTORY}', recursive=True)
-image_dirs = [d for d in image_dirs if YOLO_DIR not in d]
+image_dirs = [d for d in image_dirs if YOLO_DIR not in d and YOLO_SEG_DIR not in d]
 image_dirs = [d for d in image_dirs if YOLO_K_FOLD_DIR not in d]
 dataset_dirs = [Path(d).parent for d in image_dirs]
 
