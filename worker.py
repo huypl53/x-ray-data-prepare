@@ -93,6 +93,13 @@ def handle_image(image_path,
             for v in item[region_key]['vertices']:
                 v['x'] = v['x']/ new_relative_width
                 v['y'] = v['y']/ new_relative_height
+
+                v['x'] = max(0, v['x'])
+                v['x'] = min(1, v['x'])
+
+                v['y'] = max(0, v['y'])
+                v['y'] = min(1, v['y'])
+
                 yolo_keypoints.append(v['x'])
                 yolo_keypoints.append(v['y'])
                 vertices.append((v['x'] * width, v['y'] * height))

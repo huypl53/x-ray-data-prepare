@@ -5,13 +5,13 @@ import sys
 from env_file import *
 import shutil
 
-assert len(sys.argv) == 3, 'Invalids args, i.g: python <root_data_dir> <new_data_dir>'
+assert len(sys.argv) == 4, 'Invalids args, i.g: python <root_data_dir> <new_data_dir>'
 
 # ROOT_DS_DIR =  '../data'
 # NEW_DS_DIR = '../x-ray-all-exclude-val-4/'
-ROOT_DS_DIR = sys.argv[0]
-NEW_DS_DIR = sys.argv[1]
-IMAGES_SRC_DIRECTORY = sys.argv[2]
+ROOT_DS_DIR = sys.argv[1]
+NEW_DS_DIR = sys.argv[2]
+IMAGES_SRC_DIRECTORY = sys.argv[3]
 
 new_ds_dir= pathlib.Path(NEW_DS_DIR)
 new_ds_dir.mkdir(exist_ok=True)
