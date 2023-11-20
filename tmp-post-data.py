@@ -4,6 +4,8 @@ from glob import glob
 
 def fix_unbound_values(labels):
     for label in labels:
+        if not len(label): 
+            continue
         label[0] = int(label[0])
         for i in range(1, len(label)):
             v = label[i]
@@ -19,6 +21,8 @@ def parse_label_file(file_path: str):
     
     labels = [ [float(v) for v in line.split()] for line in label_string_lines]
     for label in labels:
+        if not len(label): 
+            continue
         label[0] = int(label[0])
 
     return labels
