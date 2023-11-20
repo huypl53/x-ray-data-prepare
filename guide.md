@@ -45,3 +45,9 @@ python yolo_train_fold.py <text_file_contain>
 ```bash
 
 ```
+
+## Fix error data
+
+```bash
+python tmp-post-data.py <path/to/folder/label/*.txt>
+```
