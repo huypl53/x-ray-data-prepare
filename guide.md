@@ -43,7 +43,7 @@ python yolo_train_fold.py <text_file_contain>
 3. Yolo first training with all data, then finetune with subdataset
 
 ```bash
-
+python yolo-data-all-then-finetune.py <root_data_dir> <target_data_dir> images
 ```
 
 ## Fix error data

@@ -1,4 +1,3 @@
-import pathlib
 import sys
 from tqdm import tqdm
 from glob import glob
@@ -30,12 +29,9 @@ def save_labels(labels, file_path):
     with open(file_path, 'w') as fw:
         fw.write(label_str)
 
-
 label_pattern = sys.argv[1]
-print(label_pattern)
 
 label_files = glob(label_pattern)
-print(label_files)
 
 for label_file in tqdm( label_files, leave=False ):
     labels = parse_label_file(str( label_file ))
