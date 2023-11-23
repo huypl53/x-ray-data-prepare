@@ -58,4 +58,10 @@ python tmp-post-data.py <path/to/folder/label/*.txt>
 
 ```bash
 python statistics.py <root/data/dir> <labels/dir/> <txt>
+save_dir=report-tiny-labels
+mkdir -p $save_dir/images
+while IFS= read -r line;
+do
+    ( find <root/data/dir> -type f -name $line.* -exec cp --parents {} $save_dir/images \;);
+done < ./lim-outline-files.txt
 ```
