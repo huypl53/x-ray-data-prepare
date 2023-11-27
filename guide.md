@@ -1,5 +1,7 @@
 # Experiments
 
+- yolov8 8.0.162
+
 ## Env installation
 
 ```bash
@@ -64,4 +66,10 @@ while IFS= read -r line;
 do
     ( find <root/data/dir> -type f -name $line.* -exec cp --parents {} $save_dir/images \;);
 done < ./lim-outline-files.txt
+```
+
+## Custom metrics
+
+```bash
+python metrics.py <path/to/model.pt> <path/to/data_config.yaml>
 ```
