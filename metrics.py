@@ -24,9 +24,10 @@ sensitivity = tp / (tp + fn + epsilon)
 specificity = tn/ ( tn + fp + epsilon)
 
 
-runs_dir = settings.runs_dir
+runs_dir = settings[ 'runs_dir' ]
+model_name = os.path.basename(model_path).replace('.', '-')
 
-with open(os.path.join(runs_dir, 'detect', 'val-metics.txt'), 'w') as fw:
+with open(os.path.join(runs_dir, 'detect', f'val-metics-{model_name}.txt'), 'w') as fw:
     result = [accuracy, precision, sensitivity, specificity]
     result_string = '\t'.join( [str(v) for v in result] )
     fw.write(result_string)
