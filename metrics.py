@@ -1,7 +1,9 @@
 from ultralytics.models.yolo.detect import DetectionValidator
 import sys
 from ultralytics.utils.metrics import ap_per_class
+from ultralytics import settings
 import torch
+import os
 
 model_path = sys.argv[1]
 data_config = sys.argv[2]
@@ -15,8 +17,19 @@ epsilon = 1e-16
 [[ tp, fp], [fn , tn]] = matrix
 p = tp / (tp + fp + epsilon)
 r = tp / (tp + fn + epsilon)
+
+accuracy = (tp+tn)/(tp+tn+fp+fn + epsilon)
+precision = tp / (tp+fp + epsilon)
 sensitivity = tp / (tp + fn + epsilon)
 specificity = tn/ ( tn + fp + epsilon)
+
+
+runs_dir = settings.runs_dir
+
+with open(os.path.join(runs_dir, 'detect', 'val-metics.txt'), 'w') as fw:
+    result = [accuracy, precision, sensitivity, specificity]
+    result_string = '\t'.join( [str(v) for v in result] )
+    fw.write(result_string)
 
 # stats = validator.stats
 #
