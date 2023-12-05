@@ -70,6 +70,12 @@ done < ./lim-outline-files.txt
 
 ## Custom metrics
 
+> copy files below to training workspace directory
+
 ```bash
-python metrics.py <path/to/model.pt> <path/to/data_config.yaml>
+# for single models
+python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <save_result_suffix>
+
+# run with multiple model continuously
+bash ./detect-train.sh
 ```

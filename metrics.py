@@ -5,8 +5,13 @@ from ultralytics import settings
 import torch
 import os
 
+
+# metrics based on https://en.wikipedia.org/wiki/Precision_and_recall#Definition
 model_path = sys.argv[1]
 data_config = sys.argv[2]
+save_suffix = ''
+if len(sys.argv) > 3:
+    save_suffix =  sys.argv[3]
 
 args = dict(model=model_path, data=data_config)
 validator = DetectionValidator(args=args)
