@@ -77,5 +77,6 @@ done < ./lim-outline-files.txt
 python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <save_result_suffix>
 
 # run with multiple model continuously
-bash ./detect-train.sh
+# ./export-metrics.sh and metrics.py in same location
+bash ./export-metrics.sh <detect/segment>
 ```

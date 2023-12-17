@@ -60,10 +60,10 @@ def handle_image(image_path,
     metadata = json.load(
         open(meta_path, encoding='UTF-8'))
 
-    mask_image = Image.new('1', image_size)
-    mask_draw = ImageDraw.Draw(mask_image)
-    label_image = Image.new('P', image_size, '#000')
-    label_draw = ImageDraw.Draw(label_image)
+    # mask_image = Image.new('1', image_size)
+    # mask_draw = ImageDraw.Draw(mask_image)
+    # label_image = Image.new('P', image_size, '#000')
+    # label_draw = ImageDraw.Draw(label_image)
     
     label_outline_image = image.copy()
     label_outline_draw = ImageDraw.Draw(label_outline_image)
@@ -107,11 +107,11 @@ def handle_image(image_path,
                 xmax = max(xmax, v['x'])
                 ymin = min(ymin, v['y'])
                 ymax = max(ymax, v['y'])
-            mask_draw.polygon(vertices, fill=1, outline=1)
+            # mask_draw.polygon(vertices, fill=1, outline=1)
             if (item['label'] is not None):
                 item_color = item['label']['color']
                 # item_label_name = item['label']['displayName']
-                label_draw.polygon(vertices, fill=item_color, outline=item_color)
+                # label_draw.polygon(vertices, fill=item_color, outline=item_color)
                 label_outline_draw.polygon(vertices, outline=item_color)
                 # colors_to_label_names[item_color] = item_label_name
 
@@ -131,8 +131,8 @@ def handle_image(image_path,
     open(join(parent_dir, LABEL_SEG_DIRECTORY, image_id + '.txt'), 'w').write('\n'.join(yolo_keypoint_lines))
 
     if LABEL_OUTLINE_IMAGES_DIRECTORY: label_outline_image.save(join(parent_dir, LABEL_OUTLINE_IMAGES_DIRECTORY, image_id + '.png'))
-    if MASK_IMAGES_DIRECTORY: mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
-    label_image.save(join(parent_dir, LABEL_IMAGES_DIRECTORY, image_id + '.png'))
+    # if MASK_IMAGES_DIRECTORY: mask_image.save(join(parent_dir, MASK_IMAGES_DIRECTORY, image_id + '.png'))
+    # label_image.save(join(parent_dir, LABEL_IMAGES_DIRECTORY, image_id + '.png'))
     # return colors_to_label_names
 
 def get_image_meta(meta_path):
