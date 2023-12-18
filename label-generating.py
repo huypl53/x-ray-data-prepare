@@ -2,13 +2,10 @@ from os import mkdir
 import os
 from os.path import isdir, join, dirname, splitext
 from multiprocessing import Pool, cpu_count
-from os import listdir
 from worker import handle_image, get_image_meta 
 from glob import glob
 import sys
-import json
 from tqdm import tqdm
-from pprint import pprint
 
 from env_file import *
 
