@@ -74,7 +74,7 @@ done < ./lim-outline-files.txt
 
 ```bash
 # for single models
-python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <save_result_suffix>
+python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <detect/segment> <save_result_suffix?>
 
 # run with multiple model continuously
 # ./export-metrics.sh and metrics.py in same location

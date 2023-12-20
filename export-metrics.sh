@@ -56,8 +56,8 @@ do
       args='int8'
     fi
     yolo export model=./$d/runs/$task/train/weights/best.pt format=openvino imgsz=640,640 $args
-    mv ./$d/runs/$task/train/weights/best_openvino_model  ./$d/runs/$task/train/weights/$model
+    mv ./$d/runs/$task/train/weights/best_openvino_model/  ./$d/runs/$task/train/weights/$model/
 
-    yolo settings datasets_dir=../data/ weights_dir=./$d/weights runs_dir=./$d/runs && python metrics.py ./$d/runs/$task/train/weights/$model ./datasets/$d$_suffix-coco.yaml
+    yolo settings datasets_dir=../data/ weights_dir=./$d/weights runs_dir=./$d/runs && python metrics.py ./$d/runs/$task/train/weights/$model ./datasets/$d$_suffix-coco.yaml $task
   done
 done
