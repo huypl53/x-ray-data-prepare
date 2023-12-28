@@ -1,11 +1,20 @@
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.models.yolo.segment import SegmentationValidator
 import sys
+from ultralytics.cfg import get_cfg #, get_save_dir
 from ultralytics.utils.metrics import ap_per_class
 from ultralytics import settings
 import torch
 import os
+from pathlib import Path
 
+from ultralytics.utils import  SETTINGS
+
+def get_save_dir(args):                                                            
+    project = args.project or Path(SETTINGS['runs_dir']) /args.task     
+    name =args.name or f'{args.mode}'                                        
+    return Path(project) / name
+    # return increment_path(Path(project) / name, exist_ok=self.args.exist_ok)   
 
 # metrics based on https://en.wikipedia.org/wiki/Precision_and_recall#Definition
 model_path = sys.argv[1]
@@ -21,8 +30,13 @@ if len(sys.argv) > 4:
 confidences = [0.3, 0.5, 0.7, 0.9]
 for conf in confidences:
     save_suffix =  '_' + str(conf)
-    args = dict(model=model_path, data=data_config, conf=conf)
-    validator = DetectionValidator(args=args) if task == 'detect' else SegmentationValidator(args=args)
+
+    args = dict(model=model_path, data=data_config, conf=conf, mode='val')
+    args = get_cfg(overrides=args)
+    # print(f"{args}")
+    save_dir = get_save_dir(args)
+    save_dir = Path(f"{str(save_dir)}_{conf}")
+    validator = DetectionValidator(save_dir = save_dir, args=args) if task == 'detect' else SegmentationValidator(args=args)
     validator()
 
     matrix = validator.confusion_matrix.matrix
