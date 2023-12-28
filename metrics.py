@@ -31,12 +31,12 @@ confidences = [0.3, 0.5, 0.7, 0.9]
 for conf in confidences:
     save_suffix =  '_' + str(conf)
 
-    args = dict(model=model_path, data=data_config, conf=conf, mode='val')
+    args = dict(model=model_path, data=data_config, conf=conf, mode='val', task=task)
     args = get_cfg(overrides=args)
     # print(f"{args}")
     save_dir = get_save_dir(args)
     save_dir = Path(f"{str(save_dir)}_{conf}")
-    validator = DetectionValidator(save_dir = save_dir, args=args) if task == 'detect' else SegmentationValidator(args=args)
+    validator = DetectionValidator(save_dir = save_dir, args=args) if task == 'detect' else SegmentationValidator(save_dir = save_dir, args=args)
     validator()
 
     matrix = validator.confusion_matrix.matrix
