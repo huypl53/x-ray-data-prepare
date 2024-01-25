@@ -80,3 +80,5 @@ python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <detect/segment>
 # ./export-metrics.sh and metrics.py in same location
 bash ./export-metrics.sh <detect/segment>
 ```
+
+## Inference then save result
