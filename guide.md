@@ -81,4 +81,14 @@ python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <detect/segment>
 bash ./export-metrics.sh <detect/segment>
 ```
 
+## Remove small boxes
+
+```bash
+python remove_small_bbox.py <input-dir> <output-dir>
+```
+
 ## Inference then save result
+
+```bash
+python yolov8-inference.py
+```
