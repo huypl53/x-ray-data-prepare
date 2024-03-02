@@ -26,7 +26,7 @@ python3 label-generating.py <image_root_folder>
 
 ```bash
 # prepare train/test + dataset.yml
-python3 yolo-nreparing.py <image_root_folder>
+python3 yolo-preparing.py <image_root_folder>
 # training like normal
 ```
 
