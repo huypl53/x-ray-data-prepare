@@ -36,7 +36,11 @@ def handle_image(image_path,
                  LABEL_IMAGES_DIRECTORY,
                  LABEL_BBOX_DIRECTORY, 
                  LABEL_SEG_DIRECTORY):
-    image = Image.open(image_path)
+    try: 
+        image = Image.open(image_path)
+    except Exception:
+        open('./log-reading-file-errors.txt', 'a').write(image_path + '\n')
+        return
     src_width, src_height = image.size
     image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))
 

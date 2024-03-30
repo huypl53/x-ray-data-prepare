@@ -8,7 +8,7 @@ import random
 from typing import List
 import shutil
 
-train_test_valid_rates = [0.7, 0., 0.3]
+train_test_valid_rates = [0.9, 0., 0.1]
 assert len( train_test_valid_rates ) == 3 and sum(train_test_valid_rates) == 1
 
 def split_data(data_list: List[str], rate_list: List[float]) -> List[List[str]]:
