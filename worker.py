@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw
 from sys import argv
 from os.path import isdir, join, splitext, basename, dirname
+from os import remove
 import numpy as np
 import json
 import cv2
@@ -40,6 +41,7 @@ def handle_image(image_path,
         image = Image.open(image_path)
     except Exception:
         open('./log-reading-file-errors.txt', 'a').write(image_path + '\n')
+        remove(image_path)
         return
     src_width, src_height = image.size
     image = image.crop(( 0, 0, 1280, min(image.height, 959)  ))

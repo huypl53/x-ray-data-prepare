@@ -92,3 +92,9 @@ python remove_small_bbox.py <input-dir> <output-dir>
 ```bash
 python yolov8-inference.py
 ```
+
+## Add null image to training
+
+```bash
+bash add-null-images.sh <path/to/folder/containing/ds> <path/to/folder/containing/null/images>
+```
