@@ -91,10 +91,28 @@ python remove_small_bbox.py <input-dir> <output-dir>
 
 ```bash
 python yolov8-inference.py
+# declare -a ds=( "2_Viem_thuc_quan" "3_Viem_da_day_HP_am" "4_Viem_da_day_HP_duong" "5_Ung_thu_thuc_quan" "6_Ung_thu_da_day" "7_Loet_HTT" ); for d in "${ds[@]}"; do \yolo settings datasets_dir=../data/ weights_dir=./$d/weights runs_dir=./$d/runs && python yolov8-inference.py -d datasets/$d-bbox-coco.yaml -m $d/runs/detect/train/weights/best.pt -t detect; done
+
 ```
 
 ## Add null image to training
 
 ```bash
 bash add-null-images.sh <path/to/folder/containing/ds> <path/to/folder/containing/null/images>
+```
+
+## Plotting results
+
+```bash
+declare -a ds=( "2_Viem_thuc_quan" "3_Viem_da_day_HP_am" "4_Viem_da_day_HP_duong" "5_Ung_thu_thuc_quan" "6_Ung_thu_da_day" "7_Loet_HTT" ); \
+for d in "${ds[@]}"; do \
+    yolo settings datasets_dir=../data/ weights_dir=./$d/weights runs_dir=./$d/runs && python yolov8-plotting.py /workspace/segment-240401/2_Viem_thuc_quan/runs/segment/train/weights/best.pt datasets/2_Viem_thuc_quan-seg-coco.yaml segment; done
+
+# Or
+# yolo yolov8-plotting-v2.py <path/yolov8/train/images> <path/yolov8/train/label> <yolov8/model.pt> <path/to/save/dir>
+
+declare -a ds=( "2_Viem_thuc_quan" "3_Viem_da_day_HP_am" "4_Viem_da_day_HP_duong" "5_Ung_thu_thuc_quan" "6_Ung_thu_da_day" "7_Loet_HTT" ); \
+for d in "${ds[@]}"; do \
+
+ python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8_seg/images/val/ /workspace/data/data-240331/$d/yolov8_seg/labels/val/ ./$d/runs/segment/train/weights/best.pt ./$d/runs/segment/val/images/; done
 ```
