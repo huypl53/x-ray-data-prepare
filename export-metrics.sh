@@ -24,6 +24,11 @@ then
   _suffix='-seg'
 fi
 
+if [[ "$task" == "detect" ]]
+then 
+  _suffix='-bbox'
+fi
+
 imgsz=640
 
 declare -a models=(

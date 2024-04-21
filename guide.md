@@ -114,5 +114,6 @@ for d in "${ds[@]}"; do \
 declare -a ds=( "2_Viem_thuc_quan" "3_Viem_da_day_HP_am" "4_Viem_da_day_HP_duong" "5_Ung_thu_thuc_quan" "6_Ung_thu_da_day" "7_Loet_HTT" ); \
 for d in "${ds[@]}"; do \
 
- python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8_seg/images/val/ /workspace/data/data-240331/$d/yolov8_seg/labels/val/ ./$d/runs/segment/train/weights/best.pt ./$d/runs/segment/val/images/; done
+ python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8/images/val/ /workspace/data/data-240331/$d/yolov8/labels/val/ ./$d/runs/detect/train/weights/best.pt ./$d/runs/detect/val/images/ detect; done
+ python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8_seg/images/val/ /workspace/data/data-240331/$d/yolov8_seg/labels/val/ ./$d/runs/segment/train/weights/best.pt ./$d/runs/segment/val/images/ segment; done
 ```
