@@ -74,7 +74,14 @@ done < ./lim-outline-files.txt
 
 ```bash
 # for single models
-python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <detect/segment> <save_result_suffix?>
+# python metrics.py <path/to/model.pt> <path/to/data_config.yaml> <detect/segment> <save_result_suffix?>
+
+declare -a ds=( "2_Viem_thuc_quan" "3_Viem_da_day_HP_am" "5_Ung_thu_thuc_quan" "6_Ung_thu_da_day" "7_Loet_HTT" ); \
+for d in "${ds[@]}"; do \
+
+yolo settings datasets_dir=../data/ weights_dir=./$d/weights runs_dir=./$d/runs && python metrics.py  /workspace/data/data-240331/$d/yolov8/images/val/ /workspace/data/data-240331/$d/yolov8/labels/val/ /workspace/detection-240401/$d-bbox-coco.yaml /workspace/detection-240401/$d/runs/detect/train/weights/best.pt  detect;
+
+done
 
 # run with multiple model continuously
 # ./export-metrics.sh and metrics.py in same location

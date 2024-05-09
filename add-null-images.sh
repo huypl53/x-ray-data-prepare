@@ -3,7 +3,7 @@
 declare -a ds=(
 "2_Viem_thuc_quan"
 "3_Viem_da_day_HP_am"
-"4_Viem_da_day_HP_duong"
+# "4_Viem_da_day_HP_duong"
 "5_Ung_thu_thuc_quan"
 "6_Ung_thu_da_day"
 "7_Loet_HTT"
@@ -30,7 +30,7 @@ do
     fi
 
     im_train_num=`ls $im_train_dir | wc -l`
-    num_null_im=$(( im_train_num/3 ))
+    num_null_im=$(( im_train_num ))
     for im in $( find $null_image_dir -type f | shuf | head -n $num_null_im );
     do
       cp "$im" "$im_train_dir"

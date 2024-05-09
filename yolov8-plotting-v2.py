@@ -7,44 +7,10 @@ from PIL import Image, ImageDraw
 import numpy as np
 from tqdm import tqdm
 from typing import List
+from utils import read_label, rel2abs
 
 
 MAX_IM_NUM = 100
-
-
-def read_label(lb_path):
-    lines = open(lb_path, "r").read().split("\n")
-    masks = []
-    for line in lines:
-        l = line.split()
-        if not len(l):
-            continue
-        mask = []
-        mask.append(int(l[0]))
-        mask.extend([float(p) for p in l[1:]])
-
-        masks.append(mask)
-    return masks
-
-
-def rel2abs(rel_masks, im_w: int, im_h: int):
-    """
-    return: [[cls_id, [[x1, y1], [x2, y2], ..., [xn, yn]]]]
-    """
-    abs_masks = []
-    for m in rel_masks:
-        abs_mask = []
-        abs_mask.append(m[0])
-
-        vertices = np.array(m[1:])
-        vertices[0::2] *= im_w
-        vertices[1::2] *= im_h
-
-        abs_mask.append(vertices.tolist())
-
-        abs_masks.append(abs_mask)
-    return abs_masks
-
 
 def gen_prediction(model, im_paths):
     for im_path in im_paths:
