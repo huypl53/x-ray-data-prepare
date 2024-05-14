@@ -1,26 +1,27 @@
-import sys
-from typing import Dict, Tuple, Union
-from glob import glob
-from ultralytics.cfg import get_cfg  # , get_save_dir
-from ultralytics.utils.metrics import ap_per_class
-from ultralytics import settings
-from ultralytics import YOLO
-from ultralytics.utils import ops
-import torch
 import os
+import sys
+from glob import glob
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
+
 import numpy as np
+import torch
 from pandas import DataFrame
 from PIL import Image, ImageDraw
+from tqdm import tqdm
+from ultralytics import YOLO, settings
+from ultralytics.cfg import get_cfg  # , get_save_dir
 
 # from sklearn.metrics import precision_score, accuracy_score, multilabel_confusion_matrix
-from ultralytics.utils import SETTINGS
-from tqdm import tqdm
-from utils import read_label, rel2abs
+from ultralytics.utils import SETTINGS, ops
+from ultralytics.utils.metrics import ap_per_class
+
+from utils import box_iou, read_label, rel2abs
 
 MAX_IM_NUM = -1
 EPS = 1e-8
 
+confidences = [0.3, 0.5, 0.7, 0.9]
 
 # metrics based on https://en.wikipedia.org/wiki/Precision_and_recall#Definition
 def get_save_dir(args):
@@ -29,26 +30,79 @@ def get_save_dir(args):
     return Path(project) / name
 
 
-def box_iou(box1, box2, eps=1e-7):
-    """
-    Calculate intersection-over-union (IoU) of boxes. Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-    Based on https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
+def calculate_metrics(im_metric: Dict[str, float]) -> List[float]:
+    im_tp = im_metric["im_tp"]
+    im_tn = im_metric["im_tn"]
+    im_fp = im_metric["im_fp"]
+    im_fn = im_metric["im_fn"]
 
+    # Metics on images
+    im_se = im_tp / (im_tp + im_fn + EPS)
+    im_sp = im_tn / (im_fp + im_tn + EPS)
+    im_ppv = im_tp / (im_tp + im_fp + EPS)
+    im_npv = im_tn / (im_fn + im_tn + EPS)
+    im_acc = (im_tp + im_tn) / (im_tp + im_fp + im_fn + im_tn + EPS)
+
+    # Metrics on classes
+    matrix = Matrix(cls_matrix[conf].shape[0])
+    matrix.matrix = cls_matrix[conf]
+    cls_tp = matrix.tp[0]
+    cls_fp = matrix.fp[0]
+    cls_tn = matrix.tn[0]
+    cls_fn = matrix.fn[0]
+    cls_se = cls_tp / (cls_tp + cls_fn + EPS)
+    cls_ppv = cls_tp / (cls_tp + cls_fp + EPS)
+    cls_f1 = 2 * cls_se * cls_ppv / (cls_se + cls_ppv + EPS)
+
+    return [
+        im_se,
+        im_sp,
+        im_ppv,
+        im_npv,
+        im_acc,
+        cls_se,
+        cls_ppv,
+        cls_f1,
+    ]
+
+
+def filter_bboxes_wh_ratio(
+    bboxes: torch.Tensor, wh_ratios: float = 0.1
+) -> torch.Tensor:
+    """
     Args:
-        box1 (torch.Tensor): A tensor of shape (N, 4) representing N bounding boxes.
-        box2 (torch.Tensor): A tensor of shape (M, 4) representing M bounding boxes.
-        eps (float, optional): A small value to avoid division by zero. Defaults to 1e-7.
-
+        bboxes(np.ndarray): N*xywh[cls, score,...]
+        wh_ratios(float) < 1
     Returns:
-        (torch.Tensor): An NxM tensor containing the pairwise IoU values for every element in box1 and box2.
+        np.ndarray: same shape as input bboxes
     """
+    assert wh_ratios < 1
+    filter_preds = bboxes[bboxes[..., 2] / bboxes[..., 3] > wh_ratios]
+    filter_preds = filter_preds[filter_preds[..., 3] / filter_preds[..., 2] > wh_ratios]
 
-    # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
-    (a1, a2), (b1, b2) = box1.unsqueeze(1).chunk(2, 2), box2.unsqueeze(0).chunk(2, 2)
-    inter = (torch.min(a2, b2) - torch.max(a1, b1)).clamp_(0).prod(2)
+    return filter_preds
 
-    # IoU = inter / (area1 + area2 - inter)
-    return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
+
+def post_process_bboxes(
+    detections: torch.Tensor, wh_ratios: float | None = None, iou: float | None = None
+) -> torch.Tensor:
+
+    preds_xywh = ops.xyxy2xywh(detections[..., :4])
+    preds_xywh = torch.cat((preds_xywh, detections[..., 4:]), -1)
+
+    filter_detections = preds_xywh
+    # filter by w/h rate
+    if wh_ratios:
+        filter_detections = filter_bboxes_wh_ratio(filter_detections, wh_ratios)
+    #
+    filter_detections = torch.cat(
+        (ops.xywh2xyxy(filter_detections[..., :4]), filter_detections[..., 4:]),
+        -1,
+    )
+    if iou:
+        # filter by overlap rate
+        filter_detections = filter_bboxes_overlap(filter_detections, iou)
+    return filter_detections
 
 
 class Matrix:
@@ -181,6 +235,23 @@ class ConfidentMatrix(Matrix):
             self.matrix = matrix
 
 
+def filter_bboxes_overlap(bboxes: torch.Tensor, overlap=0.7) -> torch.Tensor:
+    """
+        Args:
+        bboxes(torch.Tensor): N*xyxy[cls, score,...]
+    Returns:
+        torch.Tensor: same shape as input bboxes
+    """
+    if bboxes.shape[0] == 0:
+        return bboxes
+    bboxes_xyxy = bboxes[..., :4]
+    iou_matrix = box_iou(bboxes_xyxy, bboxes_xyxy)
+    iou_matrix[iou_matrix == 1] = 0
+    overlap_idx = torch.max(torch.triu(iou_matrix), 1).values < overlap
+
+    return bboxes[overlap_idx]
+
+
 def gen_prediction(model, im_paths):
     for im_path in im_paths:
         yield model(im_path)
@@ -207,20 +278,25 @@ if __name__ == "__main__":
         for im_path in im_paths
     ]
 
-    confidences = [0.3, 0.5, 0.7, 0.9]
     results_gen = gen_prediction(model, im_paths)
 
     results = dict()
 
     args = dict(model=model_path, data=data_config, conf=0.5, mode="val", task=task)
     args = get_cfg(overrides=args)
-    save_dir = get_save_dir(args)
-    save_dir = Path(f"{str(save_dir)}")
+    save_dir = Path(f"{str(get_save_dir(args))}")
     nc = len(model.names)  # num class
 
     im_metrics: Dict[float, Dict[str, float]] = dict()
 
     cls_matrix: Dict[float, np.ndarray] = dict()
+    conf_cfg = {
+        "nc": nc,
+        "conf": 0.5,
+        "iou_thres": 0.45,
+        "single_class": True,
+        "task": "detect",
+    }
     for conf in confidences:
         im_metrics[conf] = {
             "im_tp": 0.0,
@@ -237,30 +313,23 @@ if __name__ == "__main__":
         image = Image.open(im_path)
         draw_image = ImageDraw.Draw(image)
         for conf in confidences:
-            conf_args = {
-                "nc": nc,
-                "conf": conf,
-                "iou_thres": 0.45,
-                "single_class": True,
-                "task": "detect",
-            }
+            conf_args = {**conf_cfg, "conf": conf}
             r = result[0]
             gt_bboxes = read_label(lb_path)
             im_h, im_w = r.orig_shape[:2]
             bbox_xywh = rel2abs(gt_bboxes, im_w, im_h)
-            gt_xyxy = torch.tensor(
+            gt_xyxy = torch.stack(
                 [ops.xywh2xyxy(torch.tensor(d[1])) for d in bbox_xywh]
             )
-            # gt_xyxy = torch.tensor([(xywh) for xywh in gt_xywh])
-
             gt_cls = torch.tensor([d[0] for d in bbox_xywh])
 
             detections = (
                 r.boxes.data.cpu().detach()
             )  # [ [ x1, y1, x2, y2, cnf, cls ] ] # abs coords
 
+            filter_detections = post_process_bboxes(detections, 0.2, 0.7)
             conf_matrix = ConfidentMatrix(**conf_args)
-            conf_matrix.process_batch(detections, gt_xyxy, gt_cls)
+            conf_matrix.process_batch(filter_detections, gt_xyxy, gt_cls)
 
             # 1. update overall matix
             cls_matrix[conf] += conf_matrix.matrix
@@ -289,41 +358,8 @@ if __name__ == "__main__":
                     im_metrics[conf]["im_tn"] += 1
 
     for conf in confidences:
-
         im_metric = im_metrics[conf]
-        im_tp = im_metric["im_tp"]
-        im_tn = im_metric["im_tn"]
-        im_fp = im_metric["im_fp"]
-        im_fn = im_metric["im_fn"]
-
-        # Metics on images
-        im_se = im_tp / (im_tp + im_fn + EPS)
-        im_sp = im_tn / (im_fp + im_tn + EPS)
-        im_ppv = im_tp / (im_tp + im_fp + EPS)
-        im_npv = im_tn / (im_fn + im_tn + EPS)
-        im_acc = (im_tp + im_tn) / (im_tp + im_fp + im_fn + im_tn + EPS)
-
-        # Metrics on classes
-        matrix = Matrix(cls_matrix[conf].shape[0])
-        matrix.matrix = cls_matrix[conf]
-        cls_tp = matrix.tp[0]
-        cls_fp = matrix.fp[0]
-        cls_tn = matrix.tn[0]
-        cls_fn = matrix.fn[0]
-        cls_se = cls_tp / (cls_tp + cls_fn + EPS)
-        cls_ppv = cls_tp / (cls_tp + cls_fp + EPS)
-        cls_f1 = 2 * cls_se * cls_ppv / (cls_se + cls_ppv + EPS)
-
-        results[conf] = [
-            im_se,
-            im_sp,
-            im_ppv,
-            im_npv,
-            im_acc,
-            cls_se,
-            cls_ppv,
-            cls_f1,
-        ]
+        results[conf] = calculate_metrics(im_metric)
 
     df = DataFrame.from_dict(
         results,
