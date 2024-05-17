@@ -1,16 +1,20 @@
 import os
 import sys
-from ultralytics import YOLO,
-from ultralytics.utils import ops
 from glob import glob
-from PIL import Image, ImageDraw
-import numpy as np
-from tqdm import tqdm
 from typing import List
+
+import numpy as np
+from PIL import Image, ImageDraw
+from tqdm import tqdm
+from ultralytics import YOLO
+from ultralytics.utils import ops
+
 from utils import read_label, rel2abs
 
+# yolo yolov8-plotting-v2.py <path/yolov8/train/images> <path/yolov8/train/label> <yolov8/model.pt> <path/to/save/dir>
 
 MAX_IM_NUM = 100
+
 
 def gen_prediction(model, im_paths):
     for im_path in im_paths:
