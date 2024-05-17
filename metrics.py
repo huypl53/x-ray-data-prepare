@@ -303,6 +303,10 @@ if __name__ == "__main__":
             "im_fp": 0.0,
             "im_tn": 0.0,
             "im_fn": 0.0,
+            "bim_tp": 0.0,
+            "bim_fp": 0.0,
+            "bim_tn": 0.0,
+            "bim_fn": 0.0,
         }
         cls_matrix[conf] = np.zeros((2, 2))
 
@@ -318,9 +322,12 @@ if __name__ == "__main__":
             gt_bboxes = read_label(lb_path)
             im_h, im_w = r.orig_shape[:2]
             bbox_xywh = rel2abs(gt_bboxes, im_w, im_h)
-            gt_xyxy = torch.stack(
-                [ops.xywh2xyxy(torch.tensor(d[1])) for d in bbox_xywh]
-            )
+            try:
+                gt_xyxy = torch.stack(
+                    [ops.xywh2xyxy(torch.tensor(d[1])) for d in bbox_xywh]
+                )
+            except:
+                gt_xyxy = torch.tensor([])
             gt_cls = torch.tensor([d[0] for d in bbox_xywh])
 
             detections = (
@@ -338,6 +345,17 @@ if __name__ == "__main__":
             fp = conf_matrix.fp
             tn = conf_matrix.tn
             fn = conf_matrix.fn
+
+            if len(bbox_xywh) > 0:
+                if len(detections) > 0:
+                    im_metrics[conf]["bim_tp"] += 1
+                else:
+                    im_metrics[conf]["bim_fn"] += 1
+            else:
+                if len(detections) > 0:
+                    im_metrics[conf]["bim_fp"] += 1
+                else:
+                    im_metrics[conf]["bim_tn"] += 1
 
             if len(bbox_xywh) > 0:  # 2.1 anh duong goc
                 # 2.1.1.  anh duong tu anh duong goc
@@ -359,7 +377,26 @@ if __name__ == "__main__":
 
     for conf in confidences:
         im_metric = im_metrics[conf]
-        results[conf] = calculate_metrics(im_metric)
+        r = calculate_metrics(im_metric)
+        bim_tp, bim_fn, bim_fp, bim_tn = (
+            im_metric["bim_tp"],
+            im_metric["bim_fn"],
+            im_metric["bim_fp"],
+            im_metric["bim_tn"],
+        )
+        bim_se = bim_tp / (bim_tp + bim_fn + EPS)
+        bim_sp = bim_tn / (bim_fp + bim_tn + EPS)
+        bim_ppv = bim_tp / (bim_tp + bim_fp + EPS)
+        bim_npv = bim_tn / (bim_fn + bim_tn + EPS)
+        bim_acc = (bim_tp + bim_tn) / (bim_tp + bim_fp + bim_fn + bim_tn + EPS)
+        r += [
+            bim_se,
+            bim_sp,
+            bim_ppv,
+            bim_npv,
+            bim_acc,
+        ]
+        results[conf] = r
 
     df = DataFrame.from_dict(
         results,
@@ -373,6 +410,11 @@ if __name__ == "__main__":
             "cls_se",
             "cls_ppv",
             "cls_f1",
+            "bim_se",
+            "bim_sp",
+            "bim_ppv",
+            "bim_npv",
+            "bim_acc",
         ],
     )
     save_file = str(save_dir) + ".csv"
