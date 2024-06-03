@@ -1,7 +1,7 @@
 import os
 import sys
 from glob import glob
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -9,7 +9,7 @@ from tqdm import tqdm
 from ultralytics import YOLO
 from ultralytics.utils import ops
 
-from utils import read_label, rel2abs
+from utils import draw_prediction, read_label, rel2abs
 
 # yolo yolov8-plotting-v2.py <path/yolov8/train/images> <path/yolov8/train/label> <yolov8/model.pt> <path/to/save/dir>
 
@@ -68,8 +68,10 @@ for i, (im_path, lb_path, result) in tqdm(enumerate(zip(im_paths, lb_paths, resu
         # Draw detection prediction
         boxes = r.boxes
         xyxy = boxes.xyxy.cpu().detach().tolist()
-        for coordinates in xyxy:
-            label_outline_draw.rectangle(coordinates, outline=label_color)
+
+        draw_prediction(label_outline_draw, xyxy, label_color)
+        # for coordinates in xyxy:
+        #     label_outline_draw.rectangle(coordinates, outline=label_color)
 
     if task == "segment":
         # Draw segment label

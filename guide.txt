@@ -1,0 +1,3 @@
+- code train: https://github.com/huypl53/x-ray-data-prepare/blob/metricsBasedFrame/train.sh
+- code test: https://github.com/huypl53/x-ray-data-prepare/blob/metricsBasedFrame/yolov8-plotting-v2.py
+- code inference: https://github.com/huypl53/x-ray-data-prepare/blob/metricsBasedFrame/inference.sh

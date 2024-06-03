@@ -1,5 +1,8 @@
+from typing import List, Tuple
+
 import numpy as np
 import torch
+from PIL import Image, ImageDraw
 
 
 def parse_label_file(file_path: str):
@@ -90,3 +93,20 @@ def box_iou(box1, box2, eps=1e-7):
 
     # IoU = inter / (area1 + area2 - inter)
     return inter / ((a2 - a1).prod(2) + (b2 - b1).prod(2) - inter + eps)
+
+
+def draw_prediction(
+    image_draw: ImageDraw.ImageDraw,
+    boxes: List[Tuple[float, float, float, float]],
+    color="blue",
+    text: str | None = None,
+):
+    """
+    image_draw:
+    boxes ([N, 4]): N boxes with each in format [x1, y1, x2, y2]
+    """
+    xyxy = boxes
+    for coordinates in xyxy:
+        image_draw.rectangle(coordinates, outline=color)
+        if text:
+            image_draw.text(coordinates[:2], text)
