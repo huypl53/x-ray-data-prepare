@@ -124,3 +124,9 @@ for d in "${ds[@]}"; do \
  python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8/images/val/ /workspace/data/data-240331/$d/yolov8/labels/val/ ./$d/runs/detect/train/weights/best.pt ./$d/runs/detect/val/images/ detect; done
  python yolov8-plotting-v2.py /workspace/data/data-240331/$d/yolov8_seg/images/val/ /workspace/data/data-240331/$d/yolov8_seg/labels/val/ ./$d/runs/segment/train/weights/best.pt ./$d/runs/segment/val/images/ segment; done
 ```
+
+## Combine all data to one
+
+```bash
+bash ./_add_ds_to_one.sh /workspace/data/data-240331/ detect /workspace/data/data-240603/data-all/
+```
