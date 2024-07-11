@@ -1,6 +1,7 @@
 import os
 import sys
 from glob import glob
+from itertools import zip_longest
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
@@ -119,11 +120,11 @@ class Matrix:
 
     @property
     def fp(self):
-        return self.matrix.sum(1) - self.tp
+        return self.matrix.sum(0) - self.tp
 
     @property
     def fn(self):
-        return self.matrix.sum(0) - self.tp
+        return self.matrix.sum(1) - self.tp
 
     @property
     def tn(self):
@@ -264,7 +265,7 @@ if __name__ == "__main__":
     data_config = sys.argv[3]
     model_path = sys.argv[4]
     task = sys.argv[5]
-    # save_suffix = ""
+    save_suffix = sys.argv[6]
 
     assert task in ["detect", "segment"]
 
@@ -291,7 +292,7 @@ if __name__ == "__main__":
 
     cls_matrix: Dict[float, np.ndarray] = dict()
     conf_cfg = {
-        "nc": nc,
+        "nc": 1,  # assume that there is only one class
         "conf": 0.5,
         "iou_thres": 0.45,
         "single_class": True,
@@ -307,11 +308,15 @@ if __name__ == "__main__":
             "bim_fp": 0.0,
             "bim_tn": 0.0,
             "bim_fn": 0.0,
+            "aim_tp": 0.0,  # x: tính dựa trên area ảnh
+            "aim_fp": 0.0,
+            "aim_tn": 0.0,
+            "aim_fn": 0.0,
         }
         cls_matrix[conf] = np.zeros((2, 2))
 
     for i, (im_path, lb_path, result) in tqdm(
-        enumerate(zip(im_paths, lb_paths, results_gen))
+        enumerate(zip_longest(im_paths, lb_paths, results_gen))
     ):
 
         image = Image.open(im_path)
@@ -319,16 +324,17 @@ if __name__ == "__main__":
         for conf in confidences:
             conf_args = {**conf_cfg, "conf": conf}
             r = result[0]
-            gt_bboxes = read_label(lb_path)
+
+            gt_bboxes = read_label(lb_path) if os.path.isfile(lb_path) else []
             im_h, im_w = r.orig_shape[:2]
-            bbox_xywh = rel2abs(gt_bboxes, im_w, im_h)
+            gt_bbox_xywh = rel2abs(gt_bboxes, im_w, im_h)
             try:
                 gt_xyxy = torch.stack(
-                    [ops.xywh2xyxy(torch.tensor(d[1])) for d in bbox_xywh]
+                    [ops.xywh2xyxy(torch.tensor(d[1])) for d in gt_bbox_xywh]
                 )
             except:
                 gt_xyxy = torch.tensor([])
-            gt_cls = torch.tensor([d[0] for d in bbox_xywh])
+            gt_cls = torch.tensor([d[0] for d in gt_bbox_xywh])
 
             detections = (
                 r.boxes.data.cpu().detach()
@@ -336,6 +342,7 @@ if __name__ == "__main__":
 
             filter_detections = post_process_bboxes(detections, 0.2, 0.7)
             conf_matrix = ConfidentMatrix(**conf_args)
+            filter_detections[..., -1] = 0.0  # assume that there is only 1 class
             conf_matrix.process_batch(filter_detections, gt_xyxy, gt_cls)
 
             # 1. update overall matix
@@ -346,7 +353,7 @@ if __name__ == "__main__":
             tn = conf_matrix.tn
             fn = conf_matrix.fn
 
-            if len(bbox_xywh) > 0:
+            if len(gt_bbox_xywh) > 0:
                 if len(detections) > 0:
                     im_metrics[conf]["bim_tp"] += 1
                 else:
@@ -357,7 +364,7 @@ if __name__ == "__main__":
                 else:
                     im_metrics[conf]["bim_tn"] += 1
 
-            if len(bbox_xywh) > 0:  # 2.1 anh duong goc
+            if len(gt_bbox_xywh) > 0:  # 2.1 anh duong goc
                 # 2.1.1.  anh duong tu anh duong goc
                 if tp[0] >= fn[0]:
                     im_metrics[conf]["im_tp"] += 1
@@ -375,6 +382,10 @@ if __name__ == "__main__":
                 else:
                     im_metrics[conf]["im_tn"] += 1
 
+            im_metrics[conf]["aim_tp"] += tp[0]
+            im_metrics[conf]["aim_fp"] += fp[0]
+            im_metrics[conf]["aim_tn"] += tn[0]
+            im_metrics[conf]["aim_fn"] += fn[0]
     for conf in confidences:
         im_metric = im_metrics[conf]
         r = calculate_metrics(im_metric)
@@ -389,13 +400,11 @@ if __name__ == "__main__":
         bim_ppv = bim_tp / (bim_tp + bim_fp + EPS)
         bim_npv = bim_tn / (bim_fn + bim_tn + EPS)
         bim_acc = (bim_tp + bim_tn) / (bim_tp + bim_fp + bim_fn + bim_tn + EPS)
-        r += [
-            bim_se,
-            bim_sp,
-            bim_ppv,
-            bim_npv,
-            bim_acc,
-        ]
+
+        aim_tp = im_metrics[conf]["aim_tp"]
+        aim_fn = im_metrics[conf]["aim_fn"]
+        a_se = aim_tp / (aim_tp + aim_fn + EPS)
+        r += [bim_se, bim_sp, bim_ppv, bim_npv, bim_acc, a_se]
         results[conf] = r
 
     df = DataFrame.from_dict(
@@ -415,9 +424,11 @@ if __name__ == "__main__":
             "bim_ppv",
             "bim_npv",
             "bim_acc",
+            "a_se",
         ],
     )
-    save_file = str(save_dir) + ".csv"
-    df.to_csv(save_file, sep="\t")
+    # save_file = str(save_dir) + ".csv"
+    save_file = str(save_suffix) + ".csv"
+    df[["im_acc", "a_se", "bim_sp", "bim_se", "bim_sp"]].to_csv(save_file, sep="\t")
 
     pass
